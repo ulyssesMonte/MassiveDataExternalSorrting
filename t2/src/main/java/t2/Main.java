@@ -1,16 +1,14 @@
 package t2;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
 
 import javax.swing.SwingUtilities;
@@ -20,113 +18,128 @@ import t2.cms.Cliente;
 import t2.cms.ClienteGUI2;
 
 public class Main {
-    public String caminhoArquivo = "arquivo.dat";
-
-    public void ordenarArquivoExterno() throws IOException, ClassNotFoundException {
-        int tamanhoBloco = 100;
-        List<File> blocosOrdenados = dividirArquivo(tamanhoBloco);
-        mesclarBlocos(blocosOrdenados);
-    }
-
-    private List<File> dividirArquivo(int tamanhoBloco) throws IOException, ClassNotFoundException {
-         List<File> arquivosBlocos = new ArrayList<>();
-          ArquivoCliente arquivoCliente = new ArquivoCliente();
-           arquivoCliente.abrirArquivo(caminhoArquivo, "leitura", Cliente.class);
-            List<Cliente> clientes = new ArrayList<>(); int contador = 0;
-             List<Cliente> clientesLidos;
-             while (!(clientesLidos = arquivoCliente.leiaDoArquivo(tamanhoBloco)).isEmpty()) {
-                clientes.addAll(clientesLidos);
-                if (clientes.size() >= tamanhoBloco) {
-                    arquivosBlocos.add(escreverBloco(clientes.subList(0, tamanhoBloco), contador));
-                    clientes = clientes.subList(tamanhoBloco, clientes.size());
-                    contador++;
+    public static String caminhoArquivo = "Clientes.dat";
+    
+        public void ordenarArquivoExterno(String nomeArquivo) throws IOException, ClassNotFoundException {
+            // Passo 1: Dividir o arquivo em partes menores
+            List<File> arquivosDivididos = dividirArquivo(nomeArquivo);
+            
+            // Passo 2: Ordenar cada bloco de clientes
+            for (File arquivo : arquivosDivididos) {
+                // Usando a classe ArquivoCliente para ler os clientes do arquivo dividido
+                ArquivoCliente arquivoCliente = new ArquivoCliente();
+                arquivoCliente.abrirArquivo(arquivo.getName(), "leitura", Cliente.class);
+                
+                // Lê os registros de clientes e ordena
+                List<Cliente> clientes = arquivoCliente.leiaDoArquivo(100); // Lê até 100 clientes por vez
+                while (clientes != null && !clientes.isEmpty()) {
+                    clientes.sort(Comparator.comparing(Cliente::getNome));
+                    escreverBloco(arquivo, clientes); // Escreve os clientes ordenados no bloco
+                    clientes = arquivoCliente.leiaDoArquivo(100); // Continua lendo o próximo bloco
+                }
+                
+                arquivoCliente.fechaArquivo(); // Fecha o arquivo após a leitura e escrita
+            }
+            
+            // Passo 3: Mesclar os blocos ordenados em um único arquivo
+            File arquivoFinal = new File("clientes_ordenados.dat");
+            mesclarBlocos(arquivosDivididos, arquivoFinal);
+        }
+    
+        public List<File> dividirArquivo(String nomeArquivo) throws IOException, ClassNotFoundException {
+            List<File> arquivosDivididos = new ArrayList<>();
+            ArquivoCliente arquivoCliente = new ArquivoCliente();
+            arquivoCliente.abrirArquivo(nomeArquivo, "leitura", Cliente.class);
+        
+            List<Cliente> buffer = new ArrayList<>();
+            int contador = 0;
+        
+            // Dividir os registros em blocos de 100 clientes
+            while (true) {
+                List<Cliente> clientes = arquivoCliente.leiaDoArquivo(100);
+                if (clientes.isEmpty()) break;
+        
+                buffer.addAll(clientes);
+                contador++;
+        
+                // Quando o buffer atingir 100 registros, escreve um novo arquivo de bloco
+                if (buffer.size() >= 100) {
+                    File novoArquivo = new File("bloco_" + contador + ".dat");
+                    arquivosDivididos.add(novoArquivo);
+                    escreverBloco(novoArquivo, buffer);
+                    buffer.clear();
                 }
             }
-            if (!clientes.isEmpty()) { arquivosBlocos.add(escreverBloco(clientes, contador));
-            } arquivoCliente.fechaArquivo(); return arquivosBlocos;
-        } private File escreverBloco(List<Cliente> clientes, int blocoNumero) throws IOException {
-            // Ordenar clientes em ordem alfabética pelo nome 
-            clientes.sort(Comparator.comparing(Cliente::getNome));
-            ArquivoCliente arquivoBloco = new ArquivoCliente();
-            String nomeArquivoBloco = "bloco_" + blocoNumero + ".txt";
-            arquivoBloco.abrirArquivo(nomeArquivoBloco, "escrita", Cliente.class);
-            arquivoBloco.escreveNoArquivo(clientes); arquivoBloco.fechaArquivo();
-            return new File(nomeArquivoBloco);
+        
+            arquivoCliente.fechaArquivo();
+            return arquivosDivididos;
         }
-
-    /*private List<File> dividirArquivo(int tamanhoBloco) throws IOException {
-        List<File> arquivosBlocos = new ArrayList<>();
-        BufferedReader reader = new BufferedReader(new FileReader(caminhoArquivo));
-        List<Cliente> clientes = new ArrayList<>();
-        String linha; int contador = 0;
-        while ((linha = reader.readLine()) != null) { String[] dados = linha.split(",");
-        Cliente cliente = new Cliente(dados[0], dados[1], dados[2], dados[3], Integer.parseInt(dados[4]));
-        clientes.add(cliente);
-        if (clientes.size() == tamanhoBloco) { arquivosBlocos.add(escreverBloco(clientes, contador));
-            clientes.clear(); contador++; } } if (!clientes.isEmpty()) { arquivosBlocos.add(escreverBloco(clientes, contador));
-            } reader.close();
-        return arquivosBlocos;
-    }
-
-    private File escreverBloco(List<Cliente> clientes, int blocoNumero) throws IOException {
-        // Ordenar clientes em ordem alfabética pelo nome 
-        clientes.sort(Comparator.comparing(Cliente::getNome));
-        ArquivoCliente arquivoBloco = new ArquivoCliente();
-        arquivoBloco.abrirArquivo("bloco.txt", "escrita", Cliente.class);
-        arquivoBloco.escreveNoArquivo(clientes);
-
-        return arquivoBloco;
-    }*/
-
-    private void mesclarBlocos(List<File> blocosOrdenados) throws IOException, ClassNotFoundException {
-        PriorityQueue<BufferedReader> heap = new PriorityQueue<>(Comparator.compare(this::peekClienteId));
-        Map<BufferedReader, Cliente> cache = new HashMap<>();
-        BufferedWriter writer = new BufferedWriter(new FileWriter("arquivo_ordenado.txt"));
-        for (File bloco : blocosOrdenados) {
-            BufferedReader reader = new BufferedReader(new FileReader(bloco));
-            cache.put(reader, lerCliente(reader));
-            heap.add(reader);
-        }
-        while (!heap.isEmpty()) {
-            BufferedReader reader = heap.poll(); Cliente cliente = cache.get(reader);
-            writer.write(cliente.getNome() + "," + cliente.getNome()); writer.newLine();
-            Cliente proximoCliente = lerCliente(reader);
-            if (proximoCliente != null) {
-                cache.put(reader, proximoCliente);
-                heap.add(reader);
+             public void escreverBloco(File arquivo, List<Cliente> clientes) throws IOException {
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(arquivo))) {
+            for (Cliente cliente : clientes) {
+                outputStream.writeObject(cliente);
             }
         }
-        writer.close();
-        for (BufferedReader reader : cache.keySet()) {
-            reader.close();
-        }
     }
-
-    private Cliente lerCliente(BufferedReader reader) {
-        try {
-            String linha = reader.readLine();
-            if (linha != null) {
-                String[] dados = linha.split(",");
-                return new Cliente(dados[0], dados[1], dados[2], dados[3], Integer.parseInt(dados[4]));
+    
+        public void mesclarBlocos(List<File> arquivos, File arquivoFinal) throws IOException, ClassNotFoundException {
+        PriorityQueue<Cliente> pq = new PriorityQueue<>(Comparator.comparing(Cliente::getNome));
+    
+        // Abrir arquivos de blocos
+        List<ObjectInputStream> streams = new ArrayList<>();
+        for (File arquivo : arquivos) {
+            ObjectInputStream stream = new ObjectInputStream(new FileInputStream(arquivo));
+            streams.add(stream);
+        }
+    
+        // Adicionar o primeiro cliente de cada bloco na fila de prioridade
+        for (ObjectInputStream stream : streams) {
+            Cliente cliente = (Cliente) stream.readObject();
+            pq.add(cliente);
+        }
+    
+        // Escrever no arquivo final
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(arquivoFinal))) {
+            while (!pq.isEmpty()) {
+                Cliente cliente = pq.poll();
+                outputStream.writeObject(cliente);
+    
+                // Carregar o próximo cliente do arquivo se houver
+                for (int i = 0; i < streams.size(); i++) {
+                    if (streams.get(i).available() > 0) {
+                        Cliente proximoCliente = (Cliente) streams.get(i).readObject();
+                        pq.add(proximoCliente);
+                    }
+                }
             }
         }
-        catch (IOException e) {
-            e.printStackTrace();
+    }
+    
+    public Cliente lerCliente(File arquivo) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(arquivo))) {
+            return (Cliente) inputStream.readObject();
         }
-        return null;
     }
-
-    private String peekClienteId(BufferedReader reader) {
-        Cliente cliente = cache.get(reader);
-        return cliente != null ? cliente.getNome() : String.MAX_VALUE;
+    
+    public Cliente peekCliente(List<Cliente> clientes) {
+        return clientes.isEmpty() ? null : clientes.get(0);
     }
+    
+    
+        public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+        ClienteGUI2 gui = new ClienteGUI2();
+        gui.setVisible(true);
+        });
 
-
-    public static void main(String[] args) {
-        // SwingUtilities.invokeLater(() -> {
-        // ClienteGUI2 gui = new ClienteGUI2();
-        // gui.setVisible(true);
-        // });
+       /* //GERAR aRQUIVO
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Digite o nome do arquivo de saída: ");
+        String nomeArquivo = scanner.next();
+        System.out.print("Digite a quantidade de clientes a serem gerados: ");
+        int quantidadeClientes = scanner.nextInt();
+        GeradorDeArquivosDeClientes gerador = new GeradorDeArquivosDeClientes();
+        gerador.geraGrandeDataSetDeClientes(nomeArquivo, quantidadeClientes);*/
         
     
     }
