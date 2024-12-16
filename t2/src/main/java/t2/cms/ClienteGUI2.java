@@ -2,11 +2,15 @@ package t2.cms;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
+
+import t2.cms.ArquivoCliente;
+import t2.cms.BufferDeClientes;
 
 public class ClienteGUI2 extends JFrame {
     private JTable table;
@@ -88,10 +92,10 @@ public class ClienteGUI2 extends JFrame {
         }
     }
 
-//     public static void main(String[] args) {
-//         SwingUtilities.invokeLater(() -> {
-//             ClienteGUI2 gui = new ClienteGUI2();
-//             gui.setVisible(true);
-//         });
-//     }
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            ClienteGUI2 gui = new ClienteGUI2();
+            gui.setVisible(true);
+        });
+    }
 }
