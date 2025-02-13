@@ -49,11 +49,11 @@ public class GeradorDeArquivosDeClientes {
     private Cliente gerarClienteFicticio() {
         String nome = faker.name().firstName();
         String sobrenome = faker.name().lastName();
-        String endereco = faker.address().fullAddress();
         String telefone = faker.phoneNumber().cellPhone();
+        String endereco = faker.address().fullAddress();
         int creditScore = faker.number().numberBetween(0, 100);
 
-        return new Cliente(nome, sobrenome, endereco, telefone, creditScore);
+        return new Cliente(nome, sobrenome, telefone, endereco, creditScore);
     }
 
     // Método que gera um grande arquivo de clientes com até 100 milhões de registros

@@ -128,7 +128,7 @@ public class ClienteGUI {
     private void inserirCliente() {
         //inserir cliente
         JOptionPane.showMessageDialog(null, "Inserir um novo cliente");
-        cadastrarCliente(nomeArquivo);
+        cadastrarCliente(this.nomeArquivo);
     }
 
     private void removerCliente() {

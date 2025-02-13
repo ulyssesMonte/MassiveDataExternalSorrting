@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -18,7 +17,7 @@ public class OrdenarClientes {
     public static void ordenarArquivoExterno(String nomeArquivo) throws IOException, ClassNotFoundException {
         // Passo 1: Dividir o arquivo em partes menores
         List<File> arquivosDivididos = dividirArquivo(nomeArquivo);
-                        
+        try{            
             // Passo 2: Ordenar cada bloco de clientes
             for (File arquivo : arquivosDivididos) {
                 // Usando a classe ArquivoCliente para ler os clientes do arquivo dividido
@@ -28,7 +27,8 @@ public class OrdenarClientes {
                 // Lê os registros de clientes e ordena
                 List<Cliente> clientes = arquivoCliente.leiaDoArquivo(100); // Lê até 100 clientes por vez
                 while (clientes != null && !clientes.isEmpty()) {
-                    clientes.sort(Comparator.comparing(Cliente::getNome));
+                    clientes.sort(Comparator.comparing(Cliente::getNome).thenComparing(Cliente::getSobrenome));
+
                     escreverBloco(arquivo, clientes); // Escreve os clientes ordenados no bloco
                     clientes = arquivoCliente.leiaDoArquivo(100); // Continua lendo o próximo bloco
                 }
@@ -38,7 +38,23 @@ public class OrdenarClientes {
                                                         
             // Passo 3: Mesclar os blocos ordenados em um único arquivo
             File arquivoFinal = new File("clientes_ordenados.dat");
+
+            // Garantir que o arquivo esteja vazio
+            ArquivoCliente arquivoCliente = new ArquivoCliente();
+                arquivoCliente.abrirArquivo(arquivoFinal.getName(), "escrita", Cliente.class);
+                // Apenas abrir o arquivo no modo "escrita" já sobrescreve o conteúdo
+                arquivoCliente.fechaArquivo();
+
+            // Chamar a função de mesclagem
             mesclarBlocos(arquivosDivididos, arquivoFinal);
+    }   finally {
+                // Passo 5: Limpar arquivos temporários
+                for (File arquivo : arquivosDivididos) {
+                    if (arquivo.exists()) {
+                        arquivo.delete();
+                    }
+                }
+            }
         }
                                                                                                                         
                     public static List<File> dividirArquivo(String nomeArq) throws IOException, ClassNotFoundException {
@@ -78,7 +94,7 @@ public class OrdenarClientes {
                         }
                     }
                                                                             
-                    public static void mesclarBlocos(List<File> arquivos, File arquivoFinal) throws IOException, ClassNotFoundException {
+    public static void mesclarBlocos(List<File> arquivos, File arquivoFinal) throws IOException, ClassNotFoundException {
     PriorityQueue<Cliente> pq = new PriorityQueue<>(Comparator.comparing(Cliente::getNome));
     List<ObjectInputStream> streams = new ArrayList<>();
 
@@ -132,15 +148,17 @@ public class OrdenarClientes {
         return clientes.isEmpty() ? null : clientes.get(0);
     }
 
-    public static void adicionarCliente(String nomeArquivo, Cliente novoCliente) {
+    public static void adicionarCliente(String nomeArq, Cliente novoCliente) {
         ArquivoCliente arquivoCliente = new ArquivoCliente();
     
         try {
             // Abrir o arquivo no modo leitura/escrita
-            arquivoCliente.abrirArquivo(nomeArquivo, "leitura/escrita", Cliente.class);
+            arquivoCliente.abrirArquivo(nomeArq, "leitura/escrita", Cliente.class);
     
             // Escrever o novo cliente no arquivo
-            arquivoCliente.escreveNoArquivo(Collections.singletonList(novoCliente));
+            List<Cliente> cl = new ArrayList<>();
+            cl.add(novoCliente);
+            arquivoCliente.escreveNoArquivo(cl);
         } catch (IOException e) {
             System.err.println("Erro ao adicionar cliente: " + e.getMessage());
         } finally {

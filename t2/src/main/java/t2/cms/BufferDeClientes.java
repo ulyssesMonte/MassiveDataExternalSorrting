@@ -49,7 +49,7 @@ public class BufferDeClientes implements Buffer<Cliente> {
 
         try {
             // Lê uma lista de clientes do arquivo e os coloca na fila (buffer)
-            List<Cliente> clientesLidos = arquivoSequencial.leiaDoArquivo(TAMANHO_BUFFER);
+            List<Cliente> clientesLidos = arquivoSequencial.leiaDoArquivo();
             if (clientesLidos != null) {
                 for (Object obj : clientesLidos) {
                     if (obj instanceof Cliente) {
