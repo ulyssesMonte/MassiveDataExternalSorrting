@@ -42,6 +42,10 @@ public class ArquivoCliente implements ArquivoSequencial<Cliente> {
     @Override
     public List<Cliente> leiaDoArquivo(int numeroDeRegistros) throws IOException, ClassNotFoundException {
         List<Cliente> registros = new ArrayList<>();
+    
+    if (inputStream == null) {
+        throw new IOException("Input stream não inicializado");}
+    
         
         try {
             for (int i = 0; i < numeroDeRegistros; i++) {

@@ -1,5 +1,6 @@
 package t2.cms;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -149,25 +151,24 @@ public class OrdenarClientes {
     }
 
     public static void adicionarCliente(String nomeArq, Cliente novoCliente) {
-        ArquivoCliente arquivoCliente = new ArquivoCliente();
-    
-        try {
-            // Abrir o arquivo no modo leitura/escrita
-            arquivoCliente.abrirArquivo(nomeArq, "leitura/escrita", Cliente.class);
-    
-            // Escrever o novo cliente no arquivo
-            List<Cliente> cl = new ArrayList<>();
-            cl.add(novoCliente);
-            arquivoCliente.escreveNoArquivo(cl);
+        try (RandomAccessFile raf = new RandomAccessFile(nomeArq, "rw")) {
+            // Posiciona o cursor no final do arquivo
+            raf.seek(raf.length());
+
+            // Serializa o novo cliente e escreve no arquivo
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(novoCliente);
+            oos.flush();
+
+            // Escreve o tamanho do objeto serializado (em bytes)
+            byte[] dados = bos.toByteArray();
+            raf.writeInt(dados.length); // Tamanho do objeto
+            raf.write(dados); // Dados do objeto
+
+            System.out.println("Cliente adicionado com sucesso!");
         } catch (IOException e) {
             System.err.println("Erro ao adicionar cliente: " + e.getMessage());
-        } finally {
-            try {
-                // Fechar o arquivo
-                arquivoCliente.fechaArquivo();
-            } catch (IOException e) {
-                System.err.println("Erro ao fechar o arquivo: " + e.getMessage());
-            }
         }
     }
 

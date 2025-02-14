@@ -9,7 +9,7 @@ public interface ArquivoSequencial<T> {
     void abrirArquivo(String nomeDoArquivo, String modoDeLeitura, Class<T> classeBase) throws IOException;
 
     // Lê múltiplos registros do arquivo e retorna como uma lista de objetos do tipo T.
-    List<T> leiaDoArquivo() throws IOException, ClassNotFoundException;
+    List<T> leiaDoArquivo(int numeroDeRegistros) throws IOException, ClassNotFoundException;
 
     // Escreve uma lista de registros no arquivo.
     void escreveNoArquivo(List<T> dados) throws IOException;
